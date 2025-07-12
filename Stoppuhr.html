@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Frau Weigels Stoppuhr</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    h1 {
+      font-size: 2em;
+    }
+    .stopwatch-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+      gap: 20px;
+    }
+    .stopwatch {
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 10px;
+      width: 160px;
+    }
+    .time {
+      font-size: 1.5em;
+      margin: 10px 0;
+    }
+    .stopped-time {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #333;
+    }
+    .stopped-time div {
+      margin-bottom: 4px;
+      padding: 4px;
+      border-radius: 5px;
+    }
+    .fastest {
+      background-color: yellow;
+    }
+    button {
+      padding: 15px 25px;      /* Größer und breiter */
+      margin: 10px 8px;        /* Mehr Abstand */
+      font-size: 1.3em;        /* Größerer Text */
+      border-radius: 12px;     /* Abgerundete Ecken */
+      cursor: pointer;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Frau Weigels Stoppuhr</h1>
+
+  <button onclick="startAll()">Start</button>
+
+  <div class="stopwatch-container">
+    <div class="stopwatch">
+      <div class="time" id="time0">00:00.0</div>
+      <button onclick="stopWatch(0)">Stopp</button>
+      <div class="stopped-time" id="stopped0"></div>
+    </div>
+    <div class="stopwatch">
+      <div class="time" id="time1">00:00.0</div>
+      <button onclick="stopWatch(1)">Stopp</button>
+      <div class="stopped-time" id="stopped1"></div>
+    </div>
+    <div class="stopwatch">
+      <div class="time" id="time2">00:00.0</div>
+      <button onclick="stopWatch(2)">Stopp</button>
+      <div class="stopped-time" id="stopped2"></div>
+    </div>
+  </div>
+
+  <button onclick="resetAll()">Reset</button>
+  <button onclick="clearAllTimes()">Alle Zeiten zurücksetzen</button>
+
+  <script>
+    let intervals = [null, null, null];
+    let startedAt = 0;
+    let running = false;
+
+    // Alle gestoppten Zeiten (jede Zeit bekommt eine ID)
+    const stoppedTimes = [[], [], []];
+
+    function formatTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+      const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+      const tenths = Math.floor((ms % 1000) / 100);
+      return `${minutes}:${seconds}.${tenths}`;
+    }
+
+    function update(index) {
+      const now = Date.now();
+      const elapsed = now - startedAt;
+      document.getElementById(`time${index}`).textContent = formatTime(elapsed);
+    }
+
+    function startAll() {
+      if (running) return;
+      startedAt = Date.now();
+      running = true;
+      for (let i = 0; i < 3; i++) {
+        intervals[i] = setInterval(() => update(i), 100);
+      }
+    }
+
+    function stopWatch(index) {
+      if (!running) return;
+      clearInterval(intervals[index]);
+
+      const now = Date.now();
+      const elapsed = now - startedAt;
+      const formatted = formatTime(elapsed);
+      document.getElementById(`time${index}`).textContent = formatted;
+
+      // Neue Zeit speichern
+      stoppedTimes[index].push({ ms: elapsed, text: formatted });
+
+      // Alle Displays aktualisieren
+      renderAllStoppedTimes();
+    }
+
+    function renderAllStoppedTimes() {
+      // Schnellste Zeit aller Zeiten suchen
+      let fastestTime = Infinity;
+      let fastestIndex = null;
+      let fastestSubIndex = null;
+
+      // Finden der schnellsten Zeit
+      for (let i = 0; i < 3; i++) {
+        stoppedTimes[i].forEach((entry, j) => {
+          if (entry.ms < fastestTime) {
+            fastestTime = entry.ms;
+            fastestIndex = i;
+            fastestSubIndex = j;
+          }
+        });
+      }
+
+      // Alle Anzeigen neu aufbauen
+      for (let i = 0; i < 3; i++) {
+        const container = document.getElementById(`stopped${i}`);
+        container.innerHTML = "";
+        stoppedTimes[i].forEach((entry, j) => {
+          const div = document.createElement("div");
+
+          if (i === fastestIndex && j === fastestSubIndex) {
+            div.textContent = `🏆 Gestoppt: ${entry.text} 🏆`;
+            div.classList.add("fastest");
+          } else {
+            div.textContent = `Gestoppt: ${entry.text}`;
+          }
+
+          container.appendChild(div);
+        });
+      }
+    }
+
+    function resetAll() {
+      for (let i = 0; i < 3; i++) {
+        clearInterval(intervals[i]);
+        document.getElementById(`time${i}`).textContent = "00:00.0";
+        intervals[i] = null;
+      }
+      running = false;
+    }
+
+    function clearAllTimes() {
+      for (let i = 0; i < 3; i++) {
+        stoppedTimes[i] = [];
+        document.getElementById(`stopped${i}`).innerHTML = "";
+      }
+    }
+  </script>
+
+</body>
+</html>
